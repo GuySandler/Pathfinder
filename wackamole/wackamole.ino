@@ -66,9 +66,9 @@ void gameLoop() {
 		unsigned long appearTime = millis();
 		bool hit = false;
 		while (millis() - appearTime < OnTime * 1000) {
-			if (digitalRead(Buttons[moleIndex]) == LOW) {
+			if (digitalRead(order[i]) == LOW) {
 				delay(50);
-				while (digitalRead(Buttons[moleIndex]) == LOW) {
+				while (digitalRead(order[i]) == LOW) {
 					delay(10);
 				}
 				score++;
@@ -82,7 +82,7 @@ void gameLoop() {
 }
 
 void showScore() {
-	for (int i = 0; i < z; i++) {
+	for (int i = 0; i < 3; i++) {
 		for (int z = 0; z < 4; z++) {
 			blink(Leds[z], OnTime * 1000);
 		}
