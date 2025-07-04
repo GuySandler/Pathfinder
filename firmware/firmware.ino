@@ -1,7 +1,7 @@
 // Memory Game
-int Buttons[] = {D1, D2, D3, D4}; // right, top, bottom, left}
+const int Buttons[] = {D1, D2, D3, D4}; // right, top, bottom, left
 
-int Leds[] = {D26, D27, D28, D29}; // left to right
+const int Leds[] = {D29, D28, D27, D26}; // right to left
 
 double OnTime = 1;
 double OffTime = 1;
@@ -10,37 +10,32 @@ int order[50];
 int currentStep = 1;
 
 void setup() {
-	// pinMode(Button1, INPUT);
-	// pinMode(Button2, INPUT);
-	// pinMode(Button3, INPUT);
-	// pinMode(Button4, INPUT);
-	// pinMode(Led1, OUTPUT);
-	// pinMode(Led2, OUTPUT);
-	// pinMode(Led3, OUTPUT);
-	// pinMode(Led4, OUTPUT);
 	for (int i = 0; i < 4; i++) {
 		pinMode(Buttons[i], INPUT);
 		pinMode(Leds[i], OUTPUT);
-		digitalWrite(Leds[i], LOW)
+		digitalWrite(Leds[i], LOW);
 	}
 
-	// turn all leds off
-	digitalWrite(Led1, LOW);
-	digitalWrite(Led2, LOW);
-	digitalWrite(Led3, LOW);
-	digitalWrite(Led4, LOW);
-
-	for (int i = 0; i < 50; i++) {
-		order[i] = random(1, 5);
-	}
+	randomSeed(analogRead(A0)); // internet claims this will help randomness
+	resetGame();
 }
 
 void loop() {
+	startAnimation();
 	displayPattern(order, currentStep);
-	checkInput(order, currentStep, score);
-	if (currentStep >= 50) {
-		// TODO: win animation
+	if (checkInput()) {
+		score++;
+		currentStep++;
+		if (currentStep >= 50) {
+			winAnimation();
+			currentStep = 50; // cap at 50
+		}
 	}
+	else {
+		loseAnimation();
+		resetGame();
+	}
+	delay(2000);
 }
 
 void blink(int Led, double OnTime, double OffTime) {
@@ -52,118 +47,86 @@ void blink(int Led, double OnTime, double OffTime) {
 
 void displayPattern(int order[], int currentStep) {
 	for (int i = 0; i < currentStep; i++) {
-		switch (order[i]) {
-			case 1:
-				blink(Led1, OnTime, OffTime);
-				break;
-			case 2:
-				blink(Led2, OnTime, OffTime);
-				break;
-			case 3:
-				blink(Led3, OnTime, OffTime);
-				break;
-			case 4:
-				blink(Led4, OnTime, OffTime);
-				break;
-		}
+		blink(Leds[order[i]], OnTime, OffTime);
 		delay(500);
 	}
 }
 
-void checkInput(int order[], int &currentStep, int &score) {
+bool checkInput() {
 	for (int i = 0; i < currentStep; i++) {
-		bool buttonpressed = false;
-		// can probably optimize with an array
-		int Button1State = digitalRead(Button1);
-		int Button2State = digitalRead(Button2);
-		int Button3State = digitalRead(Button3);
-		int Button4State = digitalRead(Button4);
-		switch (order[i]) {
-			case 1:
-				while (!buttonpressed) {
-					Button1State = digitalRead(Button1);
-					Button2State = digitalRead(Button2);
-					Button3State = digitalRead(Button3);
-					Button4State = digitalRead(Button4);
-					if (Button1State == LOW && Button2State == LOW && Button3State == LOW && Button4State == LOW) {
-						continue;
-					} else if (Button1State == HIGH) {
-						buttonpressed = true;
-						score++;
-						currentStep++;
-						blink(Led1, OnTime, OffTime);
-					} else {
-						buttonpressed = true;
-						// TODO: lose animation
-						score = 0;
-						currentStep = 1;
-					}
-					delay(50);
-				}
-				break;
-			case 2:
-				while (!buttonpressed) {
-					Button1State = digitalRead(Button1);
-					Button2State = digitalRead(Button2);
-					Button3State = digitalRead(Button3);
-					Button4State = digitalRead(Button4);
-					if (Button1State == LOW && Button2State == LOW && Button3State == LOW && Button4State == LOW) {
-						continue;
-					} else if (Button2State == HIGH) {
-						buttonpressed = true;
-						score++;
-						currentStep++;
-						blink(Led2, OnTime, OffTime);
-					} else {
-						buttonpressed = true;
-						score = 0;
-						currentStep = 1;
-					}
-					delay(50);
-				}
-				break;
-			case 3:
-				while (!buttonpressed) {
-					Button1State = digitalRead(Button1);
-					Button2State = digitalRead(Button2);
-					Button3State = digitalRead(Button3);
-					Button4State = digitalRead(Button4);
-					if (Button1State == LOW && Button2State == LOW && Button3State == LOW && Button4State == LOW) {
-						continue;
-					} else if (Button3State == HIGH) {
-						buttonpressed = true;
-						score++;
-						currentStep++;
-						blink(Led3, OnTime, OffTime);
-					} else {
-						buttonpressed = true;
-						score = 0;
-						currentStep = 1;
-					}
-					delay(50);
-				}
-				break;
-			case 4:
-				while (!buttonpressed) {
-					Button1State = digitalRead(Button1);
-					Button2State = digitalRead(Button2);
-					Button3State = digitalRead(Button3);
-					Button4State = digitalRead(Button4);
-					if (Button1State == LOW && Button2State == LOW && Button3State == LOW && Button4State == LOW) {
-						continue;
-					} else if (Button4State == HIGH) {
-						buttonpressed = true;
-						score++;
-						currentStep++;
-						blink(Led4, OnTime, OffTime);
-					} else {
-						buttonpressed = true;
-						score = 0;
-						currentStep = 1;
-					}
-					delay(50);
-				}
-				break;
+		int pressedButton = awaitButton();
+		if (pressedButton != order[i]) {
+			return false;
 		}
+		blink(Leds[pressedButton], OnTime, OffTime);
+	}
+	return true;
+}
+
+int awaitButton() {
+	while (true) {
+		for (int i = 0; i < 4; i++) {
+			if (digitalRead(Buttons[i]) == HIGH) {
+				delay(50);
+				while (digitalRead(Buttons[i]) == HIGH) {
+					delay(10);
+				}
+				return i;
+			}
+		}
+		delay(50);
+	}
+}
+
+void resetGame() {
+	score = 0;
+	currentStep = 1;
+	for (int i = 0; i < 50; i++) {
+		order[i] = random(0, 4);
+	}
+}
+
+void startAnimation() {
+	for (int z = 0; z < 3; z++) {
+		for (int i = 0; i < 4; i++) {
+			digitalWrite(Leds[i], HIGH);
+		}
+		delay(OnTime * 600);
+		for (int i = 0; i < 4; i++) {
+			digitalWrite(Leds[i], LOW);
+		}
+		delay(OffTime * 600);
+	}
+	delay(1000);
+}
+
+void winAnimation() {
+	for (int i = 0; i < 4; i++) {
+		digitalWrite(Leds[i], HIGH);
+		delay(500);
+	}
+	delay(600);
+	for (int i = 0; i < 4; i++) {
+		digitalWrite(Leds[i], LOW);
+		delay(500);
+	}
+	delay(600);
+	for (int i = 0; i < 4; i++) {
+		digitalWrite(Leds[i], HIGH);
+	}
+	delay(600);
+	for (int i = 0; i < 4; i++) {
+		digitalWrite(Leds[i], LOW);
+	}
+	delay(600);
+}
+
+void loseAnimation() {
+	for (int i = 0; i < 2; i++) {
+		digitalWrite(Leds[i], HIGH);
+	}
+	delay(1500);
+	for (int i = 0; i < 2; i++) {
+		digitalWrite(Leds[i], LOW);
 	}
 }
