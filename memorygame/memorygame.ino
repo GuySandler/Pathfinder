@@ -1,7 +1,9 @@
 // Memory Game
-const int Buttons[] = {D1, D2, D3, D4}; // right, top, bottom, left
 
-const int Leds[] = {D29, D28, D27, D26}; // right to left
+// other idea: making a just 4 buttons, score
+const int Buttons[] = {3, 1, 4, 2}; // right, top, bottom, left
+
+const int Leds[] = {29, 28, 27, 26}; // right to left
 
 double OnTime = 1;
 double OffTime = 1;
@@ -11,7 +13,7 @@ int currentStep = 1;
 
 void setup() {
 	for (int i = 0; i < 4; i++) {
-		pinMode(Buttons[i], INPUT);
+		pinMode(Buttons[i], INPUT_PULLUP);
 		pinMode(Leds[i], OUTPUT);
 		digitalWrite(Leds[i], LOW);
 	}
@@ -66,9 +68,9 @@ bool checkInput() {
 int awaitButton() {
 	while (true) {
 		for (int i = 0; i < 4; i++) {
-			if (digitalRead(Buttons[i]) == HIGH) {
+			if (digitalRead(Buttons[i]) == LOW) {
 				delay(50);
-				while (digitalRead(Buttons[i]) == HIGH) {
+				while (digitalRead(Buttons[i]) == LOW) {
 					delay(10);
 				}
 				return i;
